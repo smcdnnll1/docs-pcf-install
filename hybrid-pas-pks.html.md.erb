@@ -1,0 +1,63 @@
+---
+title: Placing Workloads in a Hybrid PAS / PKS Environment
+owner: PCF Documentation
+---
+
+<strong><%= modified_date %></strong>
+
+This topic provides guidance on how to split workloads between Pivotal Application Service (PAS) and Pivotal Container Service (PKS) and determine which runtime is better suited to running a specific workload type.
+
+## <a id="overview"></a>Overview
+
+PAS works best for apps that you develop yourself and update often, and which store all state data using external services.
+As an opinionated platform, it streamlines app management and continuously optimizes for maximum app availability per infrastructure consumption.
+
+PKS works best for containerized apps that others develop and maintain, and which keep state data within the run container.
+As a do-it-yourself platform, it runs workloads in container images that you build yourself however you choose.
+
+## <a id="factors"></a>Decision Factors
+
+Consider these factors when considering whether you deploy an app to PAS or PKS.
+
+Factors suggesting that you **should** deploy an app to PAS:
+
++ You develop the app yourself.
++ You need the platform to manage patches and Common Vulnerabilities and Exposures (CVEs) for the app.
+
+Factors suggesting that you **must** deploy an app to PAS:
+
++ You need to configure and run the app in minutes.
+
+Factors suggesting that you **should** deploy an app to PKS:
+
++ You are deploying an app provided by a vendor.
++ You manage patches and CVEs yourself.
+
+Factors suggesting that you **must** deploy an app to PKS:
+
+
+## <a id="about-pas"></a>About PAS Deployments
+
+Configuring and running an app on PAS can be done in five minutes.
+You can leverage databases and other services from the built-in marketplace.
+Connection details and credentials for built-in services are generated automatically.
+
+You can deploy a basic PAS app with the following:
+
++ App manifest
++ (Optional) Services from the built-in marketplace
++ `cf push`
+
+## <a id="about-pks"></a>About PKS Deployments
+
+Configuring and running an app on PKS takes a few hours.
+You must create and maintain the database and any other services yourself.
+Apps use blue-green deployment by default.
+
+You can deploy a basic PKS app with the following:
+
++ Configuration manifest
++ Service manifest
++ Database manifest
++ App manifest
++ `kubectl apply` each manifest
