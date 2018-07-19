@@ -61,3 +61,74 @@ You can deploy a basic PKS app with the following:
 + Database manifest
 + App manifest
 + `kubectl apply` each manifest
+
+## <a id="k8s-on-pks"></a>What PKS Adds to Kubernetes
+
+<table>
+  <tr>
+    <th>Feature</th>
+    <th>Included in K8s</th>
+    <th>Included in PKS</th>
+  </tr>
+  <tr>
+    <td>Single tenant ingress</td>
+    <td align="center">&check;</td>
+    <td align="center">&check;</td>
+  </tr>
+  <tr>
+    <td>Secure multi-tenant ingress</td>
+    <td></td>
+    <td align="center">&check;</td>
+  </tr>
+  <tr>
+    <td>Stateful sets of pods</td>
+    <td align="center">&check;</td>
+    <td align="center">&check;</td>
+  </tr>
+  <tr>
+    <td>Multi-container pods</td>
+    <td align="center">&check;</td>
+    <td align="center">&check;</td>
+  </tr>
+  <tr>
+    <td>Rolling upgrades to pods</td>
+    <td align="center">&check;</td>
+    <td align="center">&check;</td>
+  </tr>
+  <tr>
+    <td>Rolling upgrades to cluster infrastructure</td>
+    <td></td>
+    <td align="center">&check;</td>
+  </tr>
+  <tr>
+    <td>Pod scaling and high availability</td>
+    <td align="center">&check;</td>
+    <td align="center">&check;</td>
+  </tr>
+  <tr>
+    <td>Cluster provisioning and scaling</td>
+    <td></td>
+    <td align="center">&check;</td>
+  </tr>
+  <tr>
+    <td>Monitoring and recovery of cluster VMs and processes</td>
+    <td></td>
+    <td align="center">&check;</td>
+  </tr>
+  <tr>
+    <td>Persistent disks</td>
+    <td align="center">&check;</td>
+    <td align="center">&check;</td>
+  </tr>
+  <tr>
+    <td>Secure container registry</td>
+    <td></td>
+    <td align="center">&check;</td>
+  </tr>
+
+  <tr>
+    <td>Embedded, hardened operating system</td>
+    <td></td>
+    <td align="center">&check;</td>
+  </tr>
+</table>
