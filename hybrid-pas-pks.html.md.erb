@@ -21,20 +21,22 @@ Consider these factors when considering whether you deploy an app to PAS or PKS.
 
 Factors suggesting that you **should** deploy an app to PAS:
 
-+ You develop the app yourself.
-+ You need the platform to manage patches and Common Vulnerabilities and Exposures (CVEs) for the app.
++ You are deploying a stateless app that you develop yourself.
++ You need to configure and run an app in minutes.
 
 Factors suggesting that you **must** deploy an app to PAS:
 
-+ You need to configure and run the app in minutes.
++ Developers need the ability to push the app without managing infrastructure.
 
 Factors suggesting that you **should** deploy an app to PKS:
 
 + You are deploying an app provided by a vendor.
-+ You manage patches and CVEs yourself.
++ A traditional infrastructure team maintains the platform.
 
 Factors suggesting that you **must** deploy an app to PKS:
 
++ Your app needs to run single-tenant clusters.
++ You need to run a stateful service.
 
 ## <a id="about-pas"></a>About PAS Deployments
 
