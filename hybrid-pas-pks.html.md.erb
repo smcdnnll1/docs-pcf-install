@@ -13,34 +13,11 @@ PAS works best for apps that you develop yourself and update often, and which st
 As an opinionated platform, it streamlines app management and continuously optimizes for maximum app availability per infrastructure consumption.
 
 PKS works best for containerized apps that others develop and maintain, and which keep state data within the run container.
-As a do-it-yourself platform, it runs workloads in container images that you build yourself however you choose.
-
-## <a id="factors"></a>Decision Factors
-
-Consider these factors when considering whether you deploy an app to PAS or PKS.
-
-Factors suggesting that you **should** deploy an app to PAS:
-
-+ You are deploying a stateless app that you develop yourself.
-+ You need to configure and run an app in minutes.
-
-Factors suggesting that you **must** deploy an app to PAS:
-
-+ Developers need the ability to push the app without managing infrastructure.
-
-Factors suggesting that you **should** deploy an app to PKS:
-
-+ You are deploying an app provided by a vendor.
-+ A traditional infrastructure team maintains the platform.
-
-Factors suggesting that you **must** deploy an app to PKS:
-
-+ Your app needs to run single-tenant clusters.
-+ You need to run a stateful service.
+As a do-it-yourself platform, it runs workloads in container images on infrastructure you control and manage yourself.
 
 ## <a id="about-pas"></a>About PAS Deployments
 
-Configuring and running an app on PAS can be done in five minutes.
+Configuring and running an app on PAS can be done in minutes.
 You can leverage databases and other services from the built-in marketplace.
 Connection details and credentials for built-in services are generated automatically.
 
@@ -48,7 +25,8 @@ You can deploy a basic PAS app with the following:
 
 + App manifest
 + (Optional) Services from the built-in marketplace
-+ `cf push`
+
+You can push the app with a single `cf push` command.
 
 ## <a id="about-pks"></a>About PKS Deployments
 
@@ -62,75 +40,33 @@ You can deploy a basic PKS app with the following:
 + Service manifest
 + Database manifest
 + App manifest
-+ `kubectl apply` each manifest
 
-## <a id="k8s-on-pks"></a>What PKS Adds to Kubernetes
+You push the app by running `kubectl apply` for each manifest.
 
-<table>
-  <tr>
-    <th>Feature</th>
-    <th>Included in K8s</th>
-    <th>Included in PKS</th>
-  </tr>
-  <tr>
-    <td>Single tenant ingress</td>
-    <td align="center">&check;</td>
-    <td align="center">&check;</td>
-  </tr>
-  <tr>
-    <td>Secure multi-tenant ingress</td>
-    <td></td>
-    <td align="center">&check;</td>
-  </tr>
-  <tr>
-    <td>Stateful sets of pods</td>
-    <td align="center">&check;</td>
-    <td align="center">&check;</td>
-  </tr>
-  <tr>
-    <td>Multi-container pods</td>
-    <td align="center">&check;</td>
-    <td align="center">&check;</td>
-  </tr>
-  <tr>
-    <td>Rolling upgrades to pods</td>
-    <td align="center">&check;</td>
-    <td align="center">&check;</td>
-  </tr>
-  <tr>
-    <td>Rolling upgrades to cluster infrastructure</td>
-    <td></td>
-    <td align="center">&check;</td>
-  </tr>
-  <tr>
-    <td>Pod scaling and high availability</td>
-    <td align="center">&check;</td>
-    <td align="center">&check;</td>
-  </tr>
-  <tr>
-    <td>Cluster provisioning and scaling</td>
-    <td></td>
-    <td align="center">&check;</td>
-  </tr>
-  <tr>
-    <td>Monitoring and recovery of cluster VMs and processes</td>
-    <td></td>
-    <td align="center">&check;</td>
-  </tr>
-  <tr>
-    <td>Persistent disks</td>
-    <td align="center">&check;</td>
-    <td align="center">&check;</td>
-  </tr>
-  <tr>
-    <td>Secure container registry</td>
-    <td></td>
-    <td align="center">&check;</td>
-  </tr>
+## <a id="factors"></a>Decision Factors
 
-  <tr>
-    <td>Embedded, hardened operating system</td>
-    <td></td>
-    <td align="center">&check;</td>
-  </tr>
-</table>
+Consider the factors in this section when deciding whether you deploy an app to PAS or PKS.
+
+### <a id="pas-factors"></a>Workloads on PAS
+
+Factors suggesting that you **should** deploy an app to PAS:
+
++ You are deploying a stateless app that you develop yourself.
++ You need to configure and run an app in minutes.
+
+Factors suggesting that you **must** deploy an app to PAS:
+
++ Developers need the ability to push the app without managing infrastructure.
+
+### <a id="pks-factors"></a>Workloads on PKS
+
+Factors suggesting that you **should** deploy an app to PKS:
+
++ You are deploying an app provided by a vendor.
++ A traditional infrastructure team maintains the platform.
+
+Factors suggesting that you **must** deploy an app to PKS:
+
++ Your app needs to run single-tenant clusters.
++ You need to run a stateful service.
++ Your workload requires persistent storage.
