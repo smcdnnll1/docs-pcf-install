@@ -1,5 +1,5 @@
 ---
-title: Placing Workloads in a Hybrid PAS / PKS Environment
+title: Choosing PAS or PKS
 owner: PCF Documentation
 ---
 
@@ -7,13 +7,36 @@ owner: PCF Documentation
 
 This topic provides guidance on how to split workloads between Pivotal Application Service (PAS) and Pivotal Container Service (PKS) and determine which runtime is better suited to running a specific workload type.
 
+Before you can deploy PAS or PKS, you must deploy BOSH and Ops Manager.
+You use Ops Manager to deploy the PAS and PKS runtime tiles.
+For more information, see [Deploying BOSH and Ops Manager](deploy-bosh-om.html).
+
 ## <a id="overview"></a>Overview
 
-PAS works best for apps that you develop yourself and update often, and which store all state data using external services.
-As an opinionated platform, it streamlines app management and continuously optimizes for maximum app availability per infrastructure consumption.
+The following table describes some of the differences between PAS and PKS:
 
-PKS works best for containerized apps that others develop and maintain, and which keep state data within the run container.
-As a do-it-yourself platform, it runs workloads in container images on infrastructure you control and manage yourself.
+<table>
+  <tr>
+    <th>Pivotal Application Service (PAS)...</th>
+    <th>Pivotal Container Service (PKS)...</th>
+  </tr>
+  <tr>
+    <td>works best for apps that you develop yourself and update often.</td>
+    <td>works best for containerized apps that others develop and maintain.</td>
+  </tr>
+  <tr>
+    <td>works best for apps which store state data using external services.</td>
+    <td>works best for apps which store state data within the run container.</td>
+  </tr>
+  <tr>
+    <td>is an opinionated platform that streamlines app management.</td>
+    <td>is a do-it-yourself platform that lets the operator determine how containers run.</td>
+  </tr>
+  <tr>
+    <td>continuously optimizes for maximum app availability per infrastructure consumption.</td>
+    <td>runs workloads on infrastructure you control and manage yourself.</td>
+  </tr>
+</table>
 
 ## <a id="about-pas"></a>About PAS Deployments
 
@@ -27,6 +50,8 @@ You can deploy a basic PAS app with the following:
 + (Optional) Services from the built-in marketplace
 
 You can push the app with a single `cf push` command.
+
+For more information, see the [PAS](./pas.html) documentation.
 
 ## <a id="about-pks"></a>About PKS Deployments
 
@@ -42,6 +67,8 @@ You can deploy a basic PKS app with the following:
 + App manifest
 
 You push the app by running `kubectl apply` for each manifest.
+
+For more information, see the [PKS](../../../runtimes/pks/index.html) documentation.
 
 ## <a id="factors"></a>Decision Factors
 
