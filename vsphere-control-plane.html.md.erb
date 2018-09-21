@@ -1,0 +1,289 @@
+---
+title: Deploy a Control Plane for PCF on vSphere
+owner: c0
+---
+
+## <a id="introduction"></a> Introduction
+
+This hot sheet is just a simple set of steps to deploy bosh and concourse on vSphere without other tools. Further instructions for offline deployment are given at the end of this document. This will lay down a Concourse deployment compatible with [Topology 1](https://docs.pivotal.io/pivotalcf/refarch/control.html#topology1) from the PCF Reference Architecture. If you need to deploy [Topology 2](https://docs.pivotal.io/pivotalcf/refarch/control.html#topology2) from the reference architecture, follow this procedure and use the create-env remote worker 
+
+## <a id="deploy-bosh"></a> Deploy BOSH
+
+1. Obtain bosh binary from https://bosh.io/docs/cli-v2/ and place onto a jumpbox with access to the platform control plan network. Make sure the jumpbox has the ruby dependencies necessary for create-env as listed in the documentation linked. (note: a deployed opsman ova has all of these dependencies pre-installed). 
+
+2. Create BOSH
+	
+	```
+	git clone https://github.com/cloudfoundry/bosh-deployment.git
+
+	# Make script with the contents of this create-env
+	bosh create-env bosh-deployment/bosh.yml \
+	    --state=state.json \
+	    --vars-store=creds.yml \
+	    -o bosh-deployment/vsphere/cpi.yml \
+	    -o bosh-deployment/vsphere/resource-pool.yml \
+	    -o bosh-deployment/misc/dns.yml \
+	    -o bosh-deployment/uaa.yml \
+	    -o bosh-deployment/credhub.yml \
+	    -o bosh-deployment/jumpbox-user.yml \
+	    -v internal_dns='[10.100.100.123]' \
+	    -v vcenter_rp=my-bosh-rp \
+	    -v director_name=bosh-1 \
+	    -v internal_cidr=10.0.0.0/24 \
+	    -v internal_gw=10.0.0.1 \
+	    -v internal_ip=10.0.0.6 \
+	    -v network_name="VM Network" \
+	    -v vcenter_dc=my-dc \
+	    -v vcenter_ds=datastore0 # Make sure this pattern matches all datastores across all AZs you might want to use \
+	    -v vcenter_ip=192.168.0.10 # Even though this says IP, I recommend using the FQDN \
+	    -v vcenter_user=root \
+	    -v vcenter_password=vmware \
+	    -v vcenter_templates=bosh-1-templates \
+	    -v vcenter_vms=bosh-1-vms \
+	    -v vcenter_disks=bosh-1-disks \
+	    -v vcenter_cluster=cluster1
+	# for no internet access
+	#   -o <( cat bosh-deployment/misc/no-internet-access/*.yml )
+	#   -o bosh-deployment/local-bosh-release.yml 
+	# note: you may want to make your an file based on the above
+	# if you have an s3/artifactory/nexus to use instead of using
+	# local files like the default offline operators do.
+	bosh alias-env bosh-1 -e 10.0.0.6 --ca-cert <(bosh int ./creds.yml --path /director_ssl/ca)
+	export BOSH_CLIENT=admin
+	export BOSH_CLIENT_SECRET=`bosh int ./creds.yml --path /admin_password`
+	bosh -e bosh-1 env
+	bosh -e bosh-1 login
+	bosh -t bosh-1 upload-stemcell https://bosh.io/d/stemcells/bosh-vsphere-esxi-ubuntu-xenial-go_agent
+	```
+
+3. Push Cloud Config<br>
+   Modify cloud config to match your IaaS configuration. Make sure to set AZs and network. Add a vm_type for your concourse worker. In general it needs big disk for pivnet downloads:
+
+	```
+	# Example vSphere cloud config
+	azs:
+	- name: z1
+	  cloud_properties:
+	    datacenters:
+	    - name: Datacenter
+	      clusters:
+	      - Cluster-A
+	          resource_pool: A-RP09
+	vm_types:
+	- name: default
+	  cloud_properties:
+	    cpu: 2
+	    ram: 1024
+	    disk: 3240
+	- name: large
+	  cloud_properties:
+	    cpu: 2
+	    ram: 4096
+	    disk: 30_240
+	- name: concourse-worker
+	  cloud_properties:
+	    cpu: 2
+	    ram: 4096
+	    disk: 200_000
+	disk_types:
+	- name: default
+	  disk_size: 3000
+	- name: large
+	  disk_size: 50_000
+
+	networks:
+	- name: default
+	  type: manual
+	  subnets:
+	  - range: 192.168.200.0/24
+	    gateway: 192.168.200.1
+	    azs: [z1]
+	    dns: [10.193.156.2]
+	    reserved: [192.168.200.0-192.168.200.100]
+	    cloud_properties:
+	      name: vxw-dvs-48-virtualwire-445-sid-1162058-labwire-izink01-offline
+
+	compilation:
+	  workers: 5
+	  reuse_compilation_vms: true
+	  az: z1
+	  vm_type: default
+	  network: default	
+	```
+
+	```
+	vim  bosh-deployment/vsphere/cloud-config.yml
+	bosh -e bosh-1 update-cloud-config bosh-deployment/vsphere/cloud-config.yml
+	```
+
+## <a id="deploy-concourse"></a> Deploy Concourse and Credhub
+
+```
+# You might need to apply operation files for
+# specific authentication schemes
+# Make script with contents of this deploy command
+git clone https://github.com/concourse/concourse-bosh-deployment.git
+git clone https://github.com/pivotalservices/concourse-credhub
+
+
+export CREDHUB_CLIENT=director_to_credhub
+export CREDHUB_SECRET=$(bosh int creds.yml --path /uaa_clients_director_to_credhub)
+credhub api --server 192.168.200.3:8844 --ca-cert <( bosh int creds.yml --path '/credhub_tls/ca') --ca-cert <( bosh int creds.yml --path '/uaa_ssl/ca')
+credhub generate -t user -n /bosh-1/concourse/local_user
+bosh deploy -e bosh-1 -d concourse \
+   concourse-bosh-deployment/cluster/concourse.yml \
+  -l concourse-bosh-deployment/versions.yml \
+  -o concourse-bosh-deployment/basic-auth.yml \
+  -o concourse-credhub/operations/add-credhub-uaa-to-web.yml \
+  -v external_url=https://concourse.company.com \
+  -v network_name=default \
+  -v web_vm_type=large \
+  -v db_vm_type=large \
+  -v db_persistent_disk_type=large \
+  -v worker_vm_type=concourse-worker \
+  -v deployment_name=concourse
+```
+
+You can now login into your concourse and new credhub using the credentials provided by:
+
+```
+#concourse web/fly cli creds
+credhub get -n /bosh-1/concourse/local_user
+#credhub running on ATC creds
+#first target your bosh credhub
+credhub get -n /bosh-1/concourse/atc_ca --output-json | jq .value.ca -r > /tmp/credhub_ca.crt
+credhub get -n /bosh-1/concourse/concourse_to_credhub_secret
+export CREDHUB_SECRET="secret from above command"
+export CREDHUB_CLIENT=concourse_to_credhub
+export CREDHUB_SERVER=https://concourse.companyu.com:8844
+credhub api --ca-cert /tmp/credhub-ca.crt
+credhub set -n /concourse/main/my-var -t value -v "hello world"	
+```
+
+## <a id="save-state"></a> Save State
+
+Save bosh script, state.json, and creds.yml to customer vault solution. Save concourse deployment script to a git repo.
+
+## <a id="deploy-remote-workers"></a> Deploy Remote Workers
+
+For isolated workers that have no route to bosh, you can use create-env to stand up worker that register back to the ATC directly. See the hot sheet below for instructions:
+https://drive.google.com/open?id=1c91g5u84DuNkDv8-Skg32a6iWdTcRVMNNtsLYoBlW5Y
+
+## <a id="next-steps"></a> Next Steps
+
+* New: Deploy Platform Automation
+	* http://docs-platform-automation.cfapps.io/pcf-automation/index.html
+* Alternate 1: Deploy PCF Pipelines
+	* Online: https://github.com/pivotal-cf/pcf-pipelines
+	* Offline: https://github.com/pivotal-cf/pcf-pipelines/blob/master/docs/offline-pipelines.md
+* Alternate 2: Deploy PCF Maestro (uses pcf-pipelines today)
+	* https://github.com/pivotalservices/pcf-pipelines-maestro
+
+## <a id="offline-usage"></a> Offline Usage
+
+### <a id="obtain-repos"></a> Obtain Repos
+
+```
+mkdir offline-resources
+cd offline-resources
+git clone https://github.com/concourse/concourse-bosh-deployment.git
+git clone https://github.com/pivotalservices/concourse-credhub
+git clone https://github.com/cloudfoundry/bosh-deployment.git	
+```
+
+(NOTE: until PR 289 is pulled into bosh-deployment, you'll also need to put https://raw.githubusercontent.com/cloudfoundry/bosh-deployment/8fb49a9f11b7e81371b4faf3c44aed137eb80984/misc/no-internet-access/os_conf.yml into the bosh-deployment/misc/no-internet-access folder)
+Move package zip to location for transfer to offline environment.
+
+### <a id="obtain-binaries"></a> Obtain Binaries
+
+Download all URL specified the following commands and name each download after the release.
+
+```
+bosh int bosh-deployment/bosh.yml \
+    -o bosh-deployment/vsphere/cpi.yml \
+    -o bosh-deployment/vsphere/resource-pool.yml \
+    -o bosh-deployment/misc/dns.yml \
+    -o bosh-deployment/uaa.yml \
+    -o bosh-deployment/credhub.yml \
+    -o bosh-deployment/jumpbox-user.yml \
+    | bosh int --path '/releases' -
+bosh int bosh-deployment/bosh.yml \
+    -o bosh-deployment/vsphere/cpi.yml \
+    -o bosh-deployment/vsphere/resource-pool.yml \
+    -o bosh-deployment/misc/dns.yml \
+    -o bosh-deployment/uaa.yml \
+    -o bosh-deployment/credhub.yml \
+    -o bosh-deployment/jumpbox-user.yml \ 
+    | bosh int --path '/resource_pools/0/stemcell/url' -
+
+bosh int concourse-bosh-deployment/cluster/concourse.yml \
+    -l concourse-bosh-deployment/versions.yml \
+    | bosh int --path '/releases' -	
+```
+
+For example for 
+
+```
+- name: bosh
+  sha1: e6c80d1a9a0f2bbad668ae0d7e525106f48cd10d
+  url: https://s3.amazonaws.com/bosh-compiled-release-tarballs/bosh-267.4.0-ubuntu-trusty-3586.26-20180815-173347-501312573-20180815173351.tgz?versionId=42aY5ipEEm4L.RgEc7kDyKhxtCewZS1I
+  version: 267.4.0
+```
+
+Run
+
+```
+wget -O bosh.tgz 'https://s3.amazonaws.com/bosh-compiled-release-tarballs/bosh-267.4.0-ubuntu-trusty-3586.26-20180815-173347-501312573-20180815173351.tgz?versionId=42aY5ipEEm4L.RgEc7kDyKhxtCewZS1I' 
+```
+
+Unpackage all of the dependencies you gathered into /tmp/offline-resources. Get the latest xenial stemcell for concourse
+
+```
+wget -O concourse-stemcell.tgz https://bosh.io/d/stemcells/bosh-vsphere-esxi-ubuntu-xenial-go_agent	
+```
+
+Finally zip up your bundle of resources
+
+```
+cd ..
+zip -r offline-resources.zip offline-resources	
+```
+
+In the customer environment on an opsman vm run
+
+```
+cd /tmp
+unzip offline-resources.zip
+cd offine-resources.zip	
+```
+
+### <a id="use-offline-operators"></a> Use Offline Operators 
+
+Use the create-env as specified in the online version, but add operators for the create-env to use the local resources:
+
+```
+$(find bosh-deployment/misc/no-internet-access/*.yml -printf '-o %p ') \
+-o bosh-deployment/local-bosh-release.yml \
+-v local_bosh_release=/tmp/offline-resources/bosh.tgz \
+-v local_os_conf_release=/tmp/offline-resources/os-conf.tgz \
+-v local_stemcell=/tmp/offline-resources/stemcell.tgz \
+-v local_vsphere_cpi=/tmp/offline-resources/bosh-vsphere-cpi.tgz \
+-v local_uaa_release=/tmp/offline-resources/uaa.tgz \
+-v local_bpm_release=/tmp/offline-resources/bpm.tgz \
+-v local_credhub_release=/tmp/offline-resources/credhub.tgz	
+```
+
+Upload Xenial stemcell
+
+```
+bosh -e bosh-1 upload-stemcell concourse-stemcell.tgz
+```
+
+When deploying concourse on the customer environment, use the following extra operator and variables
+
+```
+-o concourse-bosh-deployment/cluster/operations/no-internet-access.yml \
+-v concourse_release=/tmp/offline-resources/concourse.tgz \
+-v garden_runc_release=/tmp/offline-resources/garden_runc.tgz \
+-v postgres_release=/tmp/offline/resources/postgres_release.tgz	
+```
