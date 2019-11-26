@@ -356,7 +356,7 @@ To check your BOSH Director:
   	* `HOST` is the address of the BOSH Director. If the BOSH Director is public, HOST` is a URL, such as `https://my-bosh.xxx.cf-app.com`. Otherwise, `HOST` is the `BOSH-DIRECTOR-IP` which you retrieved in [Step 4: Retrieve BOSH Director Address](#retrieve-address).
     <p class='note'><strong>Note:</strong> Use the optional <code>--debug</code> flag to enable debug logs. For more information, see <a href="#logging">Logging</a>.</p>
 
-1. After the pre-backup check succeeds, continue to [Step 5: Confirm Backup Restore Node is Deployed](#backup-restore-node). If the pre-backup check fails, the BOSH Director might not have the correct backup scripts, or the connection to the BOSH Director might have failed.
+1. After the pre-backup check succeeds, continue to [Step 6: Confirm Backup Restore Node is Deployed](#backup-restore-node). If the pre-backup check fails, the BOSH Director might not have the correct backup scripts, or the connection to the BOSH Director might have failed.
 
 ### <a id='backup-restore-node'></a> Step 6: Confirm Backup Restore Node is Deployed
 
@@ -562,7 +562,7 @@ To back up your PAS deployment:
     * Use the optional `--debug` flag to enable debug logs. For more information, see [Logging](#logging).
     * Use the optional `--with-manifest` flag to ensure that BBR downloads your current deployment manifest when backing up. These manifests are included in the Ops Manager export, but are useful for reference.
 
-1. After the command successfully completes, continue to [Step 11: Transfer Backup Artifacts](#transfer-artifacts). If the command fails:
+1. After the command successfully completes, continue to [Step 12: Transfer Backup Artifacts](#transfer-artifacts). If the command fails:
 
   1. Run:
 
